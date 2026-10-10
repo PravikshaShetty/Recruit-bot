@@ -16,7 +16,7 @@ app = Flask(__name__)
 
 # ---------------------------------------------------------------- scoring
 # Weights add up to 100. Skills dominate because they are the hard requirement.
-W_SKILLS, W_EXPERIENCE, W_TRAITS, W_AVAILABILITY = 60, 20, 10, 10
+W_SKILLS, W_EXPERIENCE, W_TRAITS, W_AVAILABILITY = 55, 20, 15, 10
 
 # How soon the candidate can start. "Not looking" earns nothing but is NOT
 # excluded: a great fit who is not looking is still useful to a recruiter.
