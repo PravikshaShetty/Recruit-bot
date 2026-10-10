@@ -78,7 +78,7 @@ WHERE (:job_id IS NULL OR j.id = :job_id)
 """
 
 
-def rank(job_id=None, candidate_id=None, name_key="name"):
+def rank(job_id=None, candidate_id=None, name_key="name", min_score=0):
     rows = get_db().execute(
         PAIR_SQL, {"job_id": job_id, "candidate_id": candidate_id}).fetchall()
     results = []
@@ -86,6 +86,8 @@ def rank(job_id=None, candidate_id=None, name_key="name"):
         if row["skill_hits"] == 0:      # no shared skill = not a match at all
             continue
         score, reason, avail = score_pair(row)
+        if score < min_score:
+	        continue
         results.append({"row": row, "score": score, "reason": reason, "avail": avail})
     # Tie-break: higher score, then more available, then alphabetical (stable).
     results.sort(key=lambda r: (-r["score"], -r["avail"], r["row"][name_key]))
@@ -173,7 +175,8 @@ def job_matches(job_id):
     if job is None:
         return jsonify(error="job not found"), 404
     limit = request.args.get("limit", type=int)
-    ranked = rank(job_id=job_id, name_key="name")[:limit]
+    min_score = request.args.get("min_score", default=0, type=float)
+    ranked = rank(job_id=job_id, name_key="name", min_score=min_score)[:limit]
     return jsonify(job=dict(job), matches=[
         {"rank": i, "candidate_id": r["row"]["candidate_id"], "name": r["row"]["name"],
          "score": r["score"], "reason": r["reason"]}
@@ -187,7 +190,8 @@ def candidate_matches(candidate_id):
     if cand is None:
         return jsonify(error="candidate not found"), 404
     limit = request.args.get("limit", type=int)
-    ranked = rank(candidate_id=candidate_id, name_key="title")[:limit]
+    min_score = request.args.get("min_score", default=0, type=float)
+    ranked = rank(candidate_id=candidate_id, name_key="title", min_score=min_score)[:limit]
     return jsonify(candidate=dict(cand), matches=[
         {"rank": i, "job_id": r["row"]["job_id"], "title": r["row"]["title"],
          "score": r["score"], "reason": r["reason"]}
